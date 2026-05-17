@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+httpx
+python-dotenv
+joblib
+scikit-learn
+xgboost
+python-whois
+dnspython
+pandas

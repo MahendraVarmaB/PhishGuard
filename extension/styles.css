@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+body.phishguard-blocked-body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+
+.phishguard-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    display: flex; justify-content: center; align-items: center;
+    font-family: 'Outfit', sans-serif; color: #f8fafc; z-index: 2147483647;
+}
+
+.phishguard-container {
+    background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px;
+    padding: 48px; width: 100%; max-width: 500px; text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: phishguard-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes phishguard-slide-up {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.phishguard-icon-wrapper {
+    background: rgba(239, 68, 68, 0.1); width: 80px; height: 80px;
+    border-radius: 50%; display: flex; justify-content: center; align-items: center;
+    margin: 0 auto 24px; border: 2px solid rgba(239, 68, 68, 0.3);
+    animation: phishguard-pulse 2s infinite;
+}
+
+@keyframes phishguard-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.phishguard-icon { width: 40px; height: 40px; color: #ef4444; }
+
+.phishguard-title {
+    font-size: 32px; font-weight: 700; margin: 0 0 12px;
+    background: linear-gradient(to right, #f8fafc, #94a3b8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.phishguard-subtitle { font-size: 16px; color: #94a3b8; margin: 0 0 32px; }
+
+.phishguard-stats { display: flex; gap: 16px; margin-bottom: 24px; }
+
+.phishguard-stat-box {
+    flex: 1; background: rgba(0, 0, 0, 0.2); border-radius: 16px;
+    padding: 16px; border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.phishguard-stat-label {
+    display: block; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 1px; color: #64748b; margin-bottom: 8px;
+}
+
+.phishguard-stat-value { font-size: 24px; font-weight: 600; }
+.text-danger { color: #ef4444; }
+.text-safe { color: #22c55e; }
+
+.phishguard-intel {
+    background: rgba(0, 0, 0, 0.2); border-radius: 16px; padding: 16px;
+    margin-bottom: 32px; border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.phishguard-intel-title { font-size: 14px; color: #cbd5e1; margin: 0 0 12px; }
+.phishguard-badges { display: flex; justify-content: center; gap: 8px; }
+
+.phishguard-badge {
+    background: rgba(56, 189, 248, 0.1); color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.2); padding: 6px 12px;
+    border-radius: 999px; font-size: 12px; font-weight: 600;
+}
+
+.phishguard-actions { display: flex; flex-direction: column; gap: 12px; }
+
+.phishguard-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;
+    border: none; padding: 16px; border-radius: 12px; font-size: 16px;
+    font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+    font-family: 'Outfit', sans-serif;
+}
+
+.phishguard-btn-primary:hover {
+    transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.5);
+}
+
+.phishguard-btn-secondary {
+    background: transparent; color: #64748b; border: 1px solid #334155;
+    padding: 16px; border-radius: 12px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s ease; font-family: 'Outfit', sans-serif;
+}
+
+.phishguard-btn-secondary:hover { background: rgba(255, 255, 255, 0.05); color: #94a3b8; }
