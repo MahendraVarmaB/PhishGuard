@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import re
 from urllib.parse import urlparse, unquote
 import logging
@@ -66,7 +65,7 @@ class DataPrepPipeline:
             subdomain = ext.subdomain or ""
             
             # --- Original features (refined) ---
-            features = {
+            features: dict[str, float] = {
                 'url_length': len(decoded_url),
                 'hostname_length': len(hostname),
                 'path_length': len(path),
@@ -132,7 +131,7 @@ class DataPrepPipeline:
         url = "https://urlhaus-api.abuse.ch/v1/urls/recent/"
         headers = {}
         if self.urlhaus_api_key and self.urlhaus_api_key != "your_urlhaus_api_key_here":
-             headers['Auth-Key'] = self.urlhaus_api_key
+            headers['Auth-Key'] = self.urlhaus_api_key
         
         try:
             response = requests.get(url, headers=headers)
@@ -158,7 +157,7 @@ class DataPrepPipeline:
             phishtank_df = pd.read_csv(self.data_dir / "PhishTank.csv")
             
             logging.debug(f"Phishtank columns: {phishtank_df.columns}")
-            url_col = 'url' if 'url' in phishtank_df.columns else phishtank_df.columns[1] 
+            url_col = 'url' if 'url' in phishtank_df.columns else str(phishtank_df.columns[1])
             phishtank_df = phishtank_df[[url_col]].rename(columns={url_col: 'url'}).copy()
             phishtank_df['label'] = 1
             
@@ -195,7 +194,7 @@ class DataPrepPipeline:
             logging.info("Loading ISCX dataset...")
             try:
                 iscx_df = pd.read_csv(self.data_dir / "ISCX-URL-2016.csv", low_memory=False)
-                url_col_iscx = 'URL' if 'URL' in iscx_df.columns else ('url' if 'url' in iscx_df.columns else iscx_df.columns[0])
+                url_col_iscx = 'URL' if 'URL' in iscx_df.columns else ('url' if 'url' in iscx_df.columns else str(iscx_df.columns[0]))
                 
                 label_col_iscx = 'URL_Type_obf_Type' if 'URL_Type_obf_Type' in iscx_df.columns else None
                 

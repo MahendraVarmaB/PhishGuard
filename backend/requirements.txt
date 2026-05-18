@@ -9,3 +9,6 @@ xgboost
 python-whois
 dnspython
 pandas
+cachetools
+pyfailsafe
+rapidfuzz

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishGuard — Threat Detected</title>
+  <!--
+    REMEDIATION 4B: Isolated Block Page
+    ────────────────────────────────────
+    This page lives at chrome-extension://<id>/block.html — a completely
+    isolated origin. No JavaScript from the blocked website can reach here
+    via postMessage, MutationObserver, or any DOM API. The entire block UI
+    is served from the extension package, not injected into the target DOM.
+
+    Scan data is passed only through URL query parameters (read below), which
+    the page reads via URLSearchParams. There is no cross-origin channel.
+  -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #0f172a 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Outfit', sans-serif; color: #f8fafc;
+      overflow: hidden;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      padding: 52px 48px;
+      width: 100%; max-width: 520px;
+      text-align: center;
+      box-shadow: 0 32px 64px -16px rgba(0,0,0,0.6);
+      animation: slide-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(36px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+
+    .icon-ring {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: rgba(239,68,68,0.12);
+      border: 2px solid rgba(239,68,68,0.35);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 28px;
+      animation: pulse-ring 2.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0   rgba(239,68,68,0.45); }
+      70%  { box-shadow: 0 0 0 22px rgba(239,68,68,0); }
+      100% { box-shadow: 0 0 0 0   rgba(239,68,68,0); }
+    }
+
+    .icon-ring svg { width: 44px; height: 44px; color: #ef4444; }
+
+    h1 {
+      font-size: 34px; font-weight: 700; margin-bottom: 12px;
+      background: linear-gradient(135deg, #f8fafc 30%, #94a3b8 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 15px; color: #94a3b8; line-height: 1.6; margin-bottom: 32px;
+    }
+
+    .subtitle strong { color: #f1f5f9; }
+
+    /* Stats row */
+    .stats { display: flex; gap: 14px; margin-bottom: 24px; }
+    .stat-box {
+      flex: 1;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 16px 12px;
+    }
+    .stat-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+      color: #475569; margin-bottom: 6px; display: block;
+    }
+    .stat-value { font-size: 22px; font-weight: 700; color: #ef4444; }
+    .stat-value.safe { color: #22c55e; }
+
+    /* Intel badges */
+    .intel-block {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 16px; margin-bottom: 28px;
+    }
+    .intel-label {
+      font-size: 12px; color: #94a3b8; margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.8px;
+    }
+    .badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .badge {
+      background: rgba(56,189,248,0.1); color: #38bdf8;
+      border: 1px solid rgba(56,189,248,0.2);
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+    }
+
+    /* Buttons */
+    .actions { display: flex; flex-direction: column; gap: 12px; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff; border: none; padding: 16px; border-radius: 14px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -8px rgba(59,130,246,0.5);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff; border: none; padding: 14px;
+      border-radius: 14px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -8px rgba(239,68,68,0.5);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff; border: none; padding: 14px;
+      border-radius: 14px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-warning:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -8px rgba(245,158,11,0.5);
+    }
+
+    .btn-secondary {
+      background: transparent; color: #64748b;
+      border: 1px solid #334155; padding: 14px;
+      border-radius: 14px; font-size: 14px; font-weight: 500;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.04); color: #94a3b8; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-ring">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+    </div>
+
+    <h1>Access Blocked</h1>
+    <p class="subtitle" id="subtitle-text">
+      PhishGuard detected a security threat. Loading details…
+    </p>
+
+    <div class="stats" id="stats-row">
+      <div class="stat-box">
+        <span class="stat-label">Risk Score</span>
+        <span class="stat-value" id="risk-score-val">—</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Hostname</span>
+        <span class="stat-value" id="hostname-val" style="font-size:13px;word-break:break-all;">—</span>
+      </div>
+    </div>
+
+    <div class="intel-block hidden" id="intel-block">
+      <div class="intel-label">Threat Intelligence Matches</div>
+      <div class="badges" id="intel-badges"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="btn-back">↩ Go Back to Safety</button>
+      <button class="btn-warning" id="btn-proceed-once">Proceed only this time (Unsafe)</button>
+      <button class="btn-danger"  id="btn-whitelist">Whitelist Domain (Trust permanently)</button>
+    </div>
+  </div>
+
+  <script src="block.js"></script>
+</body>
+</html>

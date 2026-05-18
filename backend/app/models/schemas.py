@@ -3,6 +3,7 @@ from pydantic import BaseModel
 class ScanRequest(BaseModel):
     url: str
     whitelisted: bool = False
+    bypassed: bool = False
 
 class ScanResponse(BaseModel):
     url: str
