@@ -1,6 +1,7 @@
 import os
 import httpx
 import logging
+from .reputation_cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -21,24 +22,31 @@ class ThreatIntelService:
     # was silently always returning False and never flagging any URL.
     # -------------------------------------------------------------------------
     async def check_urlhaus(self, url: str) -> bool:
+        # Two-tier cache: malicious -> 1 hour, benign -> 24 hours
         if not self.urlhaus_key:
             return False
 
-        api_url = "https://urlhaus-api.abuse.ch/v1/url/"   # <-- FIXED endpoint
-        data    = {"url": url}
+        cached = await cache.get(url)
+        if cached is not None:
+            return bool(cached)
+
+        api_url = "https://urlhaus-api.abuse.ch/v1/url/"
+        data = {"url": url}
         headers = {"Auth-Key": self.urlhaus_key}
 
         try:
             response = await self._client.post(api_url, data=data, headers=headers)
             if response.status_code == 200:
                 json_data = response.json()
-                # query_status == "is_host" or "url_in_db" means it's known malicious
-                # query_status == "no_results" means URLhaus has no record of it (benign)
                 status = json_data.get("query_status", "")
+                is_malicious = False
                 if status in ("is_host", "url_in_db"):
                     url_status = json_data.get("url_status", "")
-                    # Only flag if the URL is currently online/malicious, not taken down
-                    return url_status in ("online", "")
+                    is_malicious = url_status in ("online", "")
+
+                ttl = 3600 if is_malicious else 86400
+                await cache.set(url, is_malicious, ttl)
+                return is_malicious
         except Exception as exc:
             logger.debug(f"URLhaus API error: {exc}")
 
@@ -51,6 +59,11 @@ class ThreatIntelService:
         if not self.virustotal_key:
             return False
 
+        # Check cache first
+        cached = await cache.get(url)
+        if cached is not None:
+            return bool(cached)
+
         import base64
         url_id  = base64.urlsafe_b64encode(url.encode()).decode().strip("=")
         api_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
@@ -60,12 +73,14 @@ class ThreatIntelService:
             response = await self._client.get(api_url, headers=headers)
 
             if response.status_code == 200:
-                data           = response.json()
-                stats          = data.get("data", {}).get("attributes", {}).get("last_analysis_stats", {})
+                data = response.json()
+                stats = data.get("data", {}).get("attributes", {}).get("last_analysis_stats", {})
                 malicious_count = stats.get("malicious", 0)
                 suspicious_count = stats.get("suspicious", 0)
-                # Flag if ANY engine marks it malicious, or 2+ mark it suspicious
-                return malicious_count > 0 or suspicious_count >= 2
+                is_malicious = malicious_count > 0 or suspicious_count >= 2
+                ttl = 3600 if is_malicious else 86400
+                await cache.set(url, is_malicious, ttl)
+                return is_malicious
 
             elif response.status_code == 404:
                 # URL not yet in VirusTotal's database — not a known threat
